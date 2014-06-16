@@ -132,9 +132,12 @@ end
 %Ensures that a save name exists
 if(handles.data.currentName)
     saveName = name;
+    %replaces illegal save characters with underscores
    if ~isempty(saveName)&&(any(saveName(regexp(saveName,'\W'))))
        saveName(regexp(saveName,'\W')) = '_';
    end
+   %removes and preceding underscores or if the name is empty, just leave
+   %it be
    while ~isempty(saveName)&&(strcmp(saveName(1),'_'))
        saveName(1)=[];
    end
