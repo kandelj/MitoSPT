@@ -1,0 +1,14 @@
+//To install go to Plugins>Macros>Install
+//This macro prompts you to select the cell to study and then does all
+//the preprocessing up until the thresholding where it prompts you to
+//select the threshold level
+//Authors: Philip Chou
+macro "Mitochondria Tool - C800C080C880C008D16D17D18D19D25D2aD34D35D36D37D38D3bD44D4bD54D58D59D5aD5bD63D66D67D68D6cD73D74D7aD7cD83D85D86D87D88D89D8cD93D9cDa4Da8Da9DaaDabDb4Db6Db7DbbDc4Dc8Dc9DcbDd5Dd6Dd7Dd8DdaDe6De7De8De9"{
+setTool("freehand");
+waitForUser("Select cell to examine, then press OK") ;
+run("Crop");
+run("Convolve...", "text1=[-1 -1 -1 -1 -1\n-1 -1 -1 -1 -1\n-1 -1 24 -1 -1\n-1 -1 -1 -1 -1\n-1 -1 -1 -1 -1\n] normalize stack");
+run("Bandpass Filter...", "filter_large=100 filter_small=2 suppress=None tolerance=5 process");
+run("Clear Outside", "stack");
+run("Threshold...");
+} 
