@@ -173,7 +173,7 @@ for i = (inc)
     suspect = strcat(fullName,sprintf('%04d.tif',i));
     if (~exist(suspect,'file'))
         file_path = strcat(file_path,name);
-        errordlg(strcat('Does Not Exist: ',strcat(file_path,sprintf('%04d.tif',i))),'File Error');
+        errordlg(strcat(strcat(file_path,sprintf('%04d.tif',i)),' does not exist '),'File Error');
         set(handles.busyStatus, 'String', '');
         return
     end
@@ -257,7 +257,9 @@ else
     %plots them
     set(handles.quartDisplay, 'Value', 1);
     plot_lines(handles);
+    %hides mean
     set(handles.meanShow, 'Value', 0);
+    
     %Displays their values
     set(handles.minimum, 'String', strcat('Min: ',num2str(handles.data.min)));
     set(handles.quart1, 'String', strcat('Q1: ',num2str(handles.data.q1)));
