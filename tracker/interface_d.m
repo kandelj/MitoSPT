@@ -111,22 +111,24 @@ lifetime = handles.data.lifetime;
 %file to include the path to the directory
 if (handles.data.current)
     fullName = name;
+    file_path = strcat(pwd,filesep);
 else
-    %ensures there is at least one \ at the end of brwose path
+    %ensures there is at least one filesep at the end of brwose path
     if(~exist(handles.data.browsePath,'dir'))
         errordlg('Stack Location folder does not exist','File Error');
         set(handles.busyStatus, 'String', '');
         return
     end
-    if ~strcmp((handles.data.browsePath(end)),'\')
-        file_path = strcat(handles.data.browsePath,'\');
+    if ~strcmp((handles.data.browsePath(end)),filesep)
+        file_path = strcat(handles.data.browsePath,filesep);
     else
         file_path = handles.data.browsePath;
     end
     fullName = strcat(file_path,name);
     %'\' is an escape character so therefore must use '\\' for the imread
     %function in the mitochondria function to work
-    fullName = strrep(fullName, '\','\\');
+    doublesep = strcat(filesep,filesep);
+    fullName = strrep(fullName, filesep,doublesep);
 end
 
 %Ensures that a save name exists
@@ -164,7 +166,7 @@ else
         set(handles.busyStatus, 'String', '');
         return
     end
-    file_path = strcat(handles.data.browseSavePath,'\');
+    file_path = strcat(handles.data.browseSavePath,filesep);
     fullSaveName = strcat(file_path,saveName);
 end
 %checks if all needed images exist
