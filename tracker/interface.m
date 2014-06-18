@@ -1,4 +1,4 @@
-%Graphical User interface_d code for the mitochondria function.
+%Graphical User interface code for the mitochondria function.
 %Authors: Philip Chou.
 %The foundation of this gui was using the guide code built into Matlab. The
 %structure of how this gui tracks data is that there is a 'data' field in
@@ -8,7 +8,7 @@
 %the mitochondria, click the calculate button and it will call the
 %'mitochondria' function. To clear all current data, click the clear
 %button.
-%The graphical interface_d will save the net distances traveled and the evaluation parameters
+%The graphical interface will save the net distances traveled and the evaluation parameters
 %to the currentdirectory.
 %NOTE: It will save the ORIGINAL net distance traveled, on the other
 %hand both the centroid plot and the histogram plot the LOG(net distance)
@@ -16,38 +16,38 @@
 
 %% Default functions created through the guide code
 %essential to start the GUI, do not edit unless you are familiar with guide
-function varargout = interface_d(varargin)
-% INTERFACE_D MATLAB code for interface_d.fig
-%      INTERFACE_D, by itself, creates a new INTERFACE_D or raises the existing
+function varargout = interface(varargin)
+% INTERFACE MATLAB code for interface.fig
+%      INTERFACE, by itself, creates a new INTERFACE or raises the existing
 %      singleton*.
 %
-%      H = INTERFACE_D returns the handle to a new INTERFACE_D or the handle to
+%      H = INTERFACE returns the handle to a new INTERFACE or the handle to
 %      the existing singleton*.
 %
-%      INTERFACE_D('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in INTERFACE_D.M with the given input arguments.
+%      INTERFACE('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in INTERFACE.M with the given input arguments.
 %
-%      INTERFACE_D('Property','Value',...) creates a new INTERFACE_D or raises the
+%      INTERFACE('Property','Value',...) creates a new INTERFACE or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before interface_d_OpeningFcn gets called.  An
+%      applied to the GUI before interface_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to interface_d_OpeningFcn via varargin.
+%      stop.  All inputs are passed to interface_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help interface_d
+% Edit the above text to modify the response to help interface
 
-% Last Modified by GUIDE v2.5 04-Jun-2014 09:42:43
+% Last Modified by GUIDE v2.5 18-Jun-2014 13:33:23
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
     'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @interface_d_OpeningFcn, ...
-    'gui_OutputFcn',  @interface_d_OutputFcn, ...
+    'gui_OpeningFcn', @interface_OpeningFcn, ...
+    'gui_OutputFcn',  @interface_OutputFcn, ...
     'gui_LayoutFcn',  [] , ...
     'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -60,26 +60,26 @@ else
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
-% --- Executes just before interface_d is made visible.
-function interface_d_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before interface is made visible.
+function interface_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to interface_d (see VARARGIN)
+% varargin   command line arguments to interface (see VARARGIN)
 
-% Choose default command line output for interface_d
+% Choose default command line output for interface
 handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
 initialize_gui(hObject, handles, false);
 
-% UIWAIT makes interface_d wait for user response (see UIRESUME)
+% UIWAIT makes interface wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
 % --- Outputs from this function are returned to the command line.
-function varargout = interface_d_OutputFcn(hObject, eventdata, handles)
+function varargout = interface_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -220,7 +220,7 @@ else
     %calculate the net distances and plot the centroid movement scatter
     %plot
     try
-        [netDist] = mitochondria_d(fullName,numPics,incr,freq,ratio,...
+        [netDist] = mitochondria(fullName,numPics,incr,freq,ratio,...
             areaThresh,lifetime,handles.Centroid);
     catch err
         wh=findall(0,'tag','TMWWaitbar');

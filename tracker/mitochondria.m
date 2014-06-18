@@ -1,4 +1,4 @@
-function [netdistances] = mitochondria_d (name, numimages, incr,hz,ratio,...
+function [netdistances] = mitochondria (name, numimages, incr,hz,ratio,...
     areaThresh, minlifetime, centroidAxes)
 %mitochondria Track mitochondrial movement in a cell.
 %   [NETDISTANCES] = mitochondria(NAME,NUMIMAGES,INCR,HERTZ,RATIO,... 
@@ -27,8 +27,6 @@ function [netdistances] = mitochondria_d (name, numimages, incr,hz,ratio,...
 inc = numimages(1):incr:numimages(2);
 %number of pictures
 numPics = length(inc);
-% %formating name of stack
-% stackName = strcat(name,'%04d.tif');
 %Adjusts the area from square microns to pixels
 areaThresh = areaThresh./(ratio^2);
 %Initalizes arrays for future use
@@ -36,13 +34,13 @@ Pics = cell(1,numPics);
 maxobjects = zeros(1,numPics);
 allcentroidx = zeros(1,numPics);
 allcentroidy = zeros(1,numPics);
+%the code for the waitbar, and making it blue
 h = waitbar(0,sprintf('0/%d',numPics),'Name','Processing Image Stack...');
 set(findobj(h,'type','patch'), 'edgecolor',[0 0 1],'facecolor',[0 0 1])
 for i = 1:numPics;
     %stores the name of each picture into the cell array
     num = sprintf('%04d.tif',inc(i));
     Pics{i} = strcat(name,num);
-
     %loads the image
     Image = imread(Pics{i});
     %finds the connected components of the image, 8-connected neighborhood
