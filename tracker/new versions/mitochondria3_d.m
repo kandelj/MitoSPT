@@ -29,6 +29,9 @@ Pics = cell(1,numPics);
 maxobjects = zeros(1,numPics);
 allcentroidx = zeros(1,numPics);
 allcentroidy = zeros(1,numPics);
+%the code for the waitbar, and making it blue
+h = waitbar(0,sprintf('0/%d',numPics),'Name','Processing Image Stack...');
+set(findobj(h,'type','patch'), 'edgecolor',[0 0 1],'facecolor',[0 0 1])
 for i = 1:numPics;
     %stores the name of each picture into the cell array
     Pics{i} = sprintf(stackName,inc(i));
@@ -183,7 +186,15 @@ for i = 1:numPics;
     %saves centroid coordinates for each object
     allcentroidx(1:length(centroidx),i) = centroidx(:);
     allcentroidy(1:length(centroidy),i) = centroidy(:);
+    
+    try
+        waitbar(i/numPics,h,sprintf('%d/%d',i,numPics))
+    catch err
+        h = waitbar(i/numPics,sprintf('%d/%d',i,numPics),'Name','Processing Image Stack...');
+        set(findobj(h,'type','patch'), 'edgecolor',[0 0 1],'facecolor',[0 0 1])
+    end
 end
+close(h)
 
 %overwrites any default (0,0) coordinates to NaN--this applies to object A where
 %objects A and B have fused to become object B, or an object has disappeared.
@@ -236,10 +247,7 @@ initialframe = (firstframe-1)*numLabels + mm;
 %frame the object is present to the last frame
 netdistance= sqrt((allcentroidx(finalframe) - allcentroidx(initialframe)).^2 + ...
     (allcentroidy(finalframe) - allcentroidy(initialframe)).^2);
-%those objects that have not traveled anywhere, meaning they appeared
-%and then disappeared, have a NaN net distance
-netdistance(netdistance == 0) = NaN;
-%and net distance in microns
+%net distance in microns
 netdistances = netdistance * ratio;
 %The total distance traveled by the mitochondria
 totdistances = nansum(alldistances) * ratio;
@@ -249,16 +257,8 @@ netangle = atan2d((allcentroidy(finalframe) - allcentroidy(initialframe)), ...
     (allcentroidx(finalframe) - allcentroidx(initialframe)));
 %gets the absolute angle of the net path
 
-
-% %this converts to microns per second in place of pixels per frame
-% allspeeds = alldistances * hz * ratio;
-% %remove the nans
-% allspeeds(isnan(allspeeds)) = [];
-% %make a linear vector
-% allspeedslin = allspeeds(:);
-% %gets the log distribution
-% logspeeds = log(allspeedslin);
-% logspeeds(logspeeds == -Inf) = [];
+netangle(isnan(totdistances))=NaN;
+netdistances(isnan(totdistances))=NaN;
 
 %converts the lifetime min from seconds to hz
 lifetimemin = minlifetime*hz;

@@ -202,7 +202,7 @@ else
     handles.data.netAngle = netAngle;
     %Title of graph
     axes(handles.Centroid);
-    centroidTitle = strcat(name,': log(net distance) of centroids');
+    centroidTitle = sprintf('%s\n %s',name,' log(net distance) of centroids');
     title(centroidTitle);
     %shows the limits of the centroid movement
     limits = get(gca,'Clim');
@@ -212,11 +212,11 @@ else
     set(handles.hiLimit, 'String', handles.data.hiLimit);
     
     axes(handles.Centroid2);
-    centroidTitle = strcat(name,': log(total distance) of centroids');
+    centroidTitle = sprintf('%s\n %s',name,'log(total distance) of centroids');
     title(centroidTitle);
     
     axes(handles.Quiver);
-    quiverTitle = strcat(name,': Net movement of mitochondria by sector');
+    quiverTitle = sprintf('%s\n %s',name,' Net movement of mitochondria by sector');
     title(quiverTitle);
     
     %plots histogram, the number 40 is arbitrary
@@ -228,13 +228,13 @@ else
     set(handles.bins, 'String', handles.data.bins_temp);
     
    %Calculates the quartiles
-    quarts = quantile(log(netDist),[0 .25 .5 .75 1]);
+    quarts = quantile(log(netDist(netDist>0)),[0 .25 .5 .75 1]);
     handles.data.min = quarts(1);
     handles.data.q1 = quarts(2);
     handles.data.q2 = quarts(3);
     handles.data.q3 = quarts(4);
     handles.data.max = quarts(5);
-    handles.data.avg = mean(log(netDist));
+    handles.data.avg = mean(log(netDist(netDist>0)));
     
     quarts = quantile(log(totDist),[0 .25 .5 .75 1]);
     handles.data.min2 = quarts(1);
@@ -259,6 +259,8 @@ else
     set(handles.maximum2, 'String', strcat('Max: ',num2str(handles.data.max2)));
     set(handles.meanShow2, 'String', strcat('Mean: ',num2str(handles.data.avg2)));
     
+    set(handles.meanShow, 'Value', 0);
+    set(handles.meanShow2, 'Value', 0);
     set(handles.quartDisplay, 'Value', 0);
     set(handles.quartDisplay2, 'Value', 0);
     
@@ -387,6 +389,7 @@ set(handles.totGraph, 'SelectedObject', handles.totCentroid);
 set(handles.saveDirSelect, 'SelectedObject', handles.currentSave);
 set(handles.saveNameSelect, 'SelectedObject', handles.currentName);
 set(handles.quartDisplay, 'Value', 0);
+set(handles.quartDisplay2, 'Value', 0);
 set(handles.meanShow, 'Value', 0);
 set(handles.meanShow2, 'Value', 0);
 %clears Centroid graph
@@ -398,6 +401,7 @@ colorbar('location','southoutside')
 colorbar off
 axis([0 1392 0 1040])
 daspect([1,1,1])
+set(handles.Centroid,'Visible','on');
 
 axes(handles.Centroid2)
 cla
@@ -407,6 +411,7 @@ colorbar('location','southoutside')
 colorbar off
 axis([0 1392 0 1040])
 daspect([1,1,1])
+set(handles.Centroid2,'Visible','on');
 
 %clears Histogram graph
 axes(handles.Histogram)
@@ -488,14 +493,14 @@ line([avg avg], yL, 'Color', 'c','LineWidth',1.5);
 function plot_histogram(handles,isNet)
 if(isNet)
     graph = handles.Histogram;
-    titled = ': Number of Mitochondria vs log(netdistance))';
+    titled = 'Number of Mitochondria vs log(netdistance))';
     xlab = 'log(netdistance(microns))';
     data = handles.data.netDist;
     bins = handles.data.bins;
     show = handles.data.showCent;
 else
     graph = handles.Histogram2;
-    titled = ': Number of Mitochondria vs log(totdistance))';
+    titled = 'Number of Mitochondria vs log(totdistance))';
     xlab = 'log(totdistance(microns))';
     data = handles.data.totDist;
     bins = handles.data.bins2;
@@ -507,7 +512,7 @@ cla
 %plots histogram with current number of bins
 hist(log(data),bins);
 name = handles.data.name;
-histogramTitle = strcat(name,titled);
+histogramTitle = sprintf('%s\n %s',name,titled);
 title(histogramTitle);
 ylabel('number of Mitocondria');
 xlabel(xlab);
@@ -523,7 +528,7 @@ cla
 %plots histogram with current number of bins
 rose(degtorad(handles.data.netAngle),30);
 name = handles.data.name;
-histogramTitle = strcat(name,' net angle histogram');
+histogramTitle = sprintf('%s\n %s',name,' net angle histogram');
 title(histogramTitle);
 
 
@@ -643,7 +648,7 @@ set(gcf,'color','w');
 a = copyobj(handles.Centroid,data);
 %set the axes nicely in the fiture
 set(a,'Units','normalized');
-set(a,'Position',[.13 .30 .74 .74 ]);
+set(a,'Position',[.13 .30 .7 .7]);
 %replot the color bar
 colorbar('location','southoutside')
 %make the name for the save file, of the form:
@@ -738,7 +743,7 @@ set(gcf,'color','w');
 a = copyobj(handles.Centroid2,data);
 %set the axes nicely in the fiture
 set(a,'Units','normalized');
-set(a,'Position',[.13 .30 .74 .74 ]);
+set(a,'Position',[.13 .30 .7 .7 ]);
 %replot the color bar
 colorbar('location','southoutside')
 %make the name for the save file, of the form:
@@ -909,7 +914,7 @@ if (get(hObject,'Value') == get(hObject,'Max'))
 else
     %else replot the histogram (cla is inherent in plot_histogram)
     plot_histogram(handles,0);
-    if (get(handles.meanShow,'Value'))
+    if (get(handles.meanShow2,'Value'))
         plot_average(handles,0);
     end
 end
