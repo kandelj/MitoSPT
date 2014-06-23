@@ -1,4 +1,4 @@
-%Graphical User interface3_d code for the mitochondria function. The
+%Graphical User interface_2 code for the mitochondria function. The
 %foundation of this gui was using the guide code built into Matlab. The
 %structure of how this gui tracks data is that there is a 'data' field in
 %the structure 'handles'. Inside the 'data' field, there are the different
@@ -7,38 +7,38 @@
 %the mitochondria, click the calculate button and it will call the
 %'mitochondria' function. To clear all current data, click the clear
 %button.
-function varargout = interface3_d(varargin)
-% INTERFACE3_D MATLAB code for interface3_d.fig
-%      INTERFACE3_D, by itself, creates a new INTERFACE3_D or raises the existing
+function varargout = interface_2(varargin)
+% INTERFACE_2 MATLAB code for interface_2.fig
+%      INTERFACE_2, by itself, creates a new INTERFACE_2 or raises the existing
 %      singleton*.
 %
-%      H = INTERFACE3_D returns the handle to a new INTERFACE3_D or the handle to
+%      H = INTERFACE_2 returns the handle to a new INTERFACE_2 or the handle to
 %      the existing singleton*.
 %
-%      INTERFACE3_D('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in INTERFACE3_D.M with the given input arguments.
+%      INTERFACE_2('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in INTERFACE_2.M with the given input arguments.
 %
-%      INTERFACE3_D('Property','Value',...) creates a new INTERFACE3_D or raises the
+%      INTERFACE_2('Property','Value',...) creates a new INTERFACE_2 or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before interface3_d_OpeningFcn gets called.  An
+%      applied to the GUI before interface_2_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to interface3_d_OpeningFcn via varargin.
+%      stop.  All inputs are passed to interface_2_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help interface3_d
+% Edit the above text to modify the response to help interface_2
 
-% Last Modified by GUIDE v2.5 06-Jun-2014 14:29:16
+% Last Modified by GUIDE v2.5 23-Jun-2014 13:07:56
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
     'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @interface3_d_OpeningFcn, ...
-    'gui_OutputFcn',  @interface3_d_OutputFcn, ...
+    'gui_OpeningFcn', @interface_2_OpeningFcn, ...
+    'gui_OutputFcn',  @interface_2_OutputFcn, ...
     'gui_LayoutFcn',  [] , ...
     'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -53,26 +53,26 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before interface3_d is made visible.
-function interface3_d_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before interface_2 is made visible.
+function interface_2_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to interface3_d (see VARARGIN)
+% varargin   command line arguments to interface_2 (see VARARGIN)
 
-% Choose default command line output for interface3_d
+% Choose default command line output for interface_2
 handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
 initialize_gui(hObject, handles, false);
 
-% UIWAIT makes interface3_d wait for user response (see UIRESUME)
+% UIWAIT makes interface_2 wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
 % --- Outputs from this function are returned to the command line.
-function varargout = interface3_d_OutputFcn(hObject, eventdata, handles)
+function varargout = interface_2_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -95,6 +95,7 @@ pause(.05);
 %stores data variables into function workspace
 name = handles.data.name;
 numPics = [handles.data.loPics handles.data.hiPics];
+incr = get(handles.incrementMenu, 'Value');
 freq = handles.data.freq;
 ratio = handles.data.ratio;
 areaThresh = [handles.data.loArea handles.data.hiArea];
@@ -153,9 +154,12 @@ suspect1 = strcat(fullName,sprintf('%04d.tif',numPics(1)));
 suspect2 = strcat(fullName,sprintf('%04d.tif',numPics(2)));
 if (~exist(suspect1,'file'))||(~exist(suspect2,'file'))
     errordlg('File does not exist, Check file name, directory or number','Error');
-elseif (numPics<1)
-    %ensures there is a positive number of pictures
-    errordlg('Input must have a positive number of pictures','Error');
+elseif (numPics(1)<0)
+    %Ensures first pic number is >=0
+    errordlg('first picture number must be non negative','Input Error');
+elseif ((numPics(2)-numPics(1))/incr<1)
+    %Ensures at least two pictures are evaluated
+    errordlg('Please select an interval and increment that evaluates at least 2 pictures','Input Error');
 elseif (freq<=0)
     %ensures frequency is positive
     errordlg('Improper frequency value','Error');
@@ -191,7 +195,7 @@ else
     cla;
     %calculate the net distances and plot the centroid movement scatter
     %plot
-    [netDist,totDist, netAngle] = mitochondria3_d(fullName,numPics,freq,ratio,...
+    [netDist,totDist, netAngle] = mitochondria_2(fullName,numPics,incr,freq,ratio,...
         areaThresh,lifetime,handles.Centroid,handles.Centroid2,handles.Quiver,columns,rows);
     %remove the NaNs
     netDist = netDist(~isnan(netDist));
@@ -291,6 +295,7 @@ else
     %saves the parameters used in the evaluation
     structName = strcat(saveName,'Parameters');
     eval(sprintf('%s.numPics=numPics;',structName));
+    eval(sprintf('%s.incr=incr;',structName));
     eval(sprintf('%s.period=1/freq;',structName));
     eval(sprintf('%s.ratio=ratio;',structName));
     eval(sprintf('%s.areaThresh=areaThresh;',structName));
@@ -804,6 +809,50 @@ if(handles.data.showCent2)
     set(get(handles.Histogram2,'Children'),'Visible','off');
 end
 % --- Executes on button press in updateCentroid.
+
+% --- Executes on button press in saveQuiver.
+function saveQuiver_Callback(hObject, eventdata, handles)
+% hObject    handle to saveQuiver (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+%Create a new figure
+data = figure;
+%set the background of the figure to white
+set(gcf,'color','w');
+%copy the histogram plot to the figure
+a = copyobj(handles.Quiver,data);
+set(a,'Units','normalized');
+%set the axes into the figure in a good place
+set(a,'Position',[.1 .1 .8 .8 ]);
+%create the name for the save file.
+%of the form: 'stackname'netMovement '# of bins'.tif
+name = strcat(handles.data.name,'netMovement');
+name = sprintf('%s %d rows %d columns',name,handles.data.rows,handles.data.columns);
+set(gcf, 'InvertHardCopy', 'off');
+%save file
+print (data,name, '-dtiff');
+
+% --- Executes on button press in saveRose.
+function saveRose_Callback(hObject, eventdata, handles)
+% hObject    handle to saveRose (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+%Create a new figure
+data = figure;
+%set the background of the figure to white
+set(gcf,'color','w');
+%copy the histogram plot to the figure
+a = copyobj(handles.Rose,data);
+set(a,'Units','normalized');
+%set the axes into the figure in a good place
+set(a,'Position',[.1 .1 .8 .8 ]);
+%create the name for the save file.
+%of the form: 'stackname'Histogram '# of bins'.tif
+name = strcat(handles.data.name,'netAngleHistogram');
+set(gcf, 'InvertHardCopy', 'off');
+%save file
+print (data,name, '-dtiff');
+
 function updateCentroid_Callback(hObject, eventdata, handles)
 % hObject    handle to updateCentroid (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -924,6 +973,161 @@ if(handles.data.showCent2)
 end
 % Hint: get(hObject,'Value') returns toggle state of quartDisplay2
 
+% --- Executes on selection change in incrementMenu.
+function incrementMenu_Callback(hObject, eventdata, handles)
+% hObject    handle to incrementMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns incrementMenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from incrementMenu
+
+
+% --- Executes during object creation, after setting all properties.
+function incrementMenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to incrementMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+%Sets the menu options to 1-5, value will also be 1-5
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+set(hObject, 'String', {'Every 1', 'Every 2nd', 'Every 3rd', 'Every 4th', 'Every 5th'});
+
+
+% --- Executes when selected object is changed in saveDirSelect.
+function saveDirSelect_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in saveDirSelect 
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)
+
+%if the current directory option is selected, store that info
+if (hObject == handles.currentSave)
+    handles.data.currentSave = 1;
+else
+    handles.data.currentSave = 0;
+end
+guidata(hObject,handles)
+
+% --- Executes when selected object is changed in saveNameSelect.
+function saveNameSelect_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in saveNameSelect 
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)
+
+%if the current directory option is selected, store that info
+if (hObject == handles.currentName)
+    handles.data.currentName = 1;
+else
+    handles.data.currentName = 0;
+end
+guidata(hObject,handles)
+
+
+% --- Executes on button press in meanShow2.
+function meanShow2_Callback(hObject, eventdata, handles)
+% hObject    handle to meanShow2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if (get(hObject,'Value') == get(hObject,'Max'))
+    plot_average(handles,0);
+else
+    %else replot the histogram (cla is inherent in plot_histogram)
+    plot_histogram(handles,0);
+    if (get(handles.quartDisplay2,'Value'))
+        plot_lines(handles,0);
+    end
+end
+if(handles.data.showCent2)
+    set(handles.Histogram2,'Visible','off');
+    set(get(handles.Histogram2,'Children'),'Visible','off');
+end
+% Hint: get(hObject,'Value') returns toggle state of meanShow2
+
+
+% --- Executes on button press in meanShow.
+function meanShow_Callback(hObject, eventdata, handles)
+% hObject    handle to meanShow (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if (get(hObject,'Value') == get(hObject,'Max'))
+    plot_average(handles,1);
+else
+    %else replot the histogram (cla is inherent in plot_histogram)
+    plot_histogram(handles,1);
+    if (get(handles.quartDisplay,'Value'))
+        plot_lines(handles,1);
+    end
+end
+if(handles.data.showCent)
+    set(handles.Histogram,'Visible','off');
+    set(get(handles.Histogram,'Children'),'Visible','off');
+end
+% Hint: get(hObject,'Value') returns toggle state of meanShow
+
+
+
+% --- Executes when selected object is changed in netGraph.
+function netGraph_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in netGraph
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+if (hObject == handles.netCentroid)
+    axes(handles.Centroid);
+    set(gca,'Visible','on');
+    set(get(gca,'Children'),'Visible','on');
+    colorbar('location','southoutside')
+    set(handles.Histogram,'Visible','off');
+    set(get(handles.Histogram,'Children'),'Visible','off');
+    handles.data.showCent = 1;
+else
+    axes(handles.Centroid);
+    set(gca,'Visible','off');
+    set(get(gca,'Children'),'Visible','off');
+    colorbar off;
+    set(handles.Histogram,'Visible','on');
+    set(get(handles.Histogram,'Children'),'Visible','on');
+    handles.data.showCent = 0;
+end
+guidata(hObject,handles)
+% handles    structure with handles and user data (see GUIDATA)
+
+% --- Executes when selected object is changed in totGraph.
+function totGraph_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in totGraph
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)
+if (hObject == handles.totCentroid)
+    axes(handles.Centroid2);
+    set(gca,'Visible','on');
+    set(get(gca,'Children'),'Visible','on');
+    colorbar('location','southoutside')
+    set(handles.Histogram2,'Visible','off');
+    set(get(handles.Histogram2,'Children'),'Visible','off');
+    handles.data.showCent2 = 1;
+else
+    axes(handles.Centroid2);
+    set(gca,'Visible','off');
+    set(get(gca,'Children'),'Visible','off');
+    colorbar off;
+    set(handles.Histogram2,'Visible','on');
+    set(get(handles.Histogram2,'Children'),'Visible','on');
+    handles.data.showCent2 = 0;
+end
+guidata(hObject,handles)
+
 %% Textboxes
 function name_Callback(hObject, eventdata, handles)
 % hObject    handle to name (see GCBO)
@@ -964,6 +1168,36 @@ function loPics_CreateFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function hiPics_Callback(hObject, eventdata, handles)
+% hObject    handle to hiPics (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+hiPics = str2double(get(hObject, 'String'));
+if isnan(hiPics)
+    %ensures it is a number
+    set(hObject, 'String', handles.data.hiPics);
+    errordlg('Input must be a number','Error');
+    return;
+end
+
+handles.data.hiPics = hiPics;
+guidata(hObject,handles)
+% Hints: get(hObject,'String') returns contents of hiPics as text
+%        str2double(get(hObject,'String')) returns contents of hiPics as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function hiPics_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to hiPics (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -1186,8 +1420,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
-
 function rows_Callback(hObject, eventdata, handles)
 % hObject    handle to rows (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -1205,7 +1437,6 @@ guidata(hObject,handles)
 % Hints: get(hObject,'String') returns contents of rows as text
 %        str2double(get(hObject,'String')) returns contents of rows as a double
 
-
 % --- Executes during object creation, after setting all properties.
 function rows_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to rows (see GCBO)
@@ -1217,8 +1448,6 @@ function rows_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-
 
 function columns_Callback(hObject, eventdata, handles)
 % hObject    handle to columns (see GCBO)
@@ -1237,7 +1466,6 @@ guidata(hObject,handles)
 % Hints: get(hObject,'String') returns contents of columns as text
 %        str2double(get(hObject,'String')) returns contents of columns as a double
 
-
 % --- Executes during object creation, after setting all properties.
 function columns_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to columns (see GCBO)
@@ -1249,120 +1477,6 @@ function columns_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-
-
-
-% --- Executes when selected object is changed in netGraph.
-function netGraph_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in netGraph
-% eventdata  structure with the following fields (see UIBUTTONGROUP)
-%	EventName: string 'SelectionChanged' (read only)
-%	OldValue: handle of the previously selected object or empty if none was selected
-%	NewValue: handle of the currently selected object
-if (hObject == handles.netCentroid)
-    axes(handles.Centroid);
-    set(gca,'Visible','on');
-    set(get(gca,'Children'),'Visible','on');
-    colorbar('location','southoutside')
-    set(handles.Histogram,'Visible','off');
-    set(get(handles.Histogram,'Children'),'Visible','off');
-    handles.data.showCent = 1;
-else
-    axes(handles.Centroid);
-    set(gca,'Visible','off');
-    set(get(gca,'Children'),'Visible','off');
-    colorbar off;
-    set(handles.Histogram,'Visible','on');
-    set(get(handles.Histogram,'Children'),'Visible','on');
-    handles.data.showCent = 0;
-end
-guidata(hObject,handles)
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in showGrid.
-function showGrid_Callback(hObject, eventdata, handles)
-% hObject    handle to showGrid (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of showGrid
-
-
-% --- Executes when selected object is changed in totGraph.
-function totGraph_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in totGraph
-% eventdata  structure with the following fields (see UIBUTTONGROUP)
-%	EventName: string 'SelectionChanged' (read only)
-%	OldValue: handle of the previously selected object or empty if none was selected
-%	NewValue: handle of the currently selected object
-% handles    structure with handles and user data (see GUIDATA)
-if (hObject == handles.totCentroid)
-    axes(handles.Centroid2);
-    set(gca,'Visible','on');
-    set(get(gca,'Children'),'Visible','on');
-    colorbar('location','southoutside')
-    set(handles.Histogram2,'Visible','off');
-    set(get(handles.Histogram2,'Children'),'Visible','off');
-    handles.data.showCent2 = 1;
-else
-    axes(handles.Centroid2);
-    set(gca,'Visible','off');
-    set(get(gca,'Children'),'Visible','off');
-    colorbar off;
-    set(handles.Histogram2,'Visible','on');
-    set(get(handles.Histogram2,'Children'),'Visible','on');
-    handles.data.showCent2 = 0;
-end
-guidata(hObject,handles)
-
-
-% --- Executes on button press in saveQuiver.
-function saveQuiver_Callback(hObject, eventdata, handles)
-% hObject    handle to saveQuiver (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-%Create a new figure
-data = figure;
-%set the background of the figure to white
-set(gcf,'color','w');
-%copy the histogram plot to the figure
-a = copyobj(handles.Quiver,data);
-set(a,'Units','normalized');
-%set the axes into the figure in a good place
-set(a,'Position',[.1 .1 .8 .8 ]);
-%create the name for the save file.
-%of the form: 'stackname'netMovement '# of bins'.tif
-name = strcat(handles.data.name,'netMovement');
-name = sprintf('%s %d rows %d columns',name,handles.data.rows,handles.data.columns);
-set(gcf, 'InvertHardCopy', 'off');
-%save file
-print (data,name, '-dtiff');
-
-
-% --- Executes on button press in saveRose.
-function saveRose_Callback(hObject, eventdata, handles)
-% hObject    handle to saveRose (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-%Create a new figure
-data = figure;
-%set the background of the figure to white
-set(gcf,'color','w');
-%copy the histogram plot to the figure
-a = copyobj(handles.Rose,data);
-set(a,'Units','normalized');
-%set the axes into the figure in a good place
-set(a,'Position',[.1 .1 .8 .8 ]);
-%create the name for the save file.
-%of the form: 'stackname'Histogram '# of bins'.tif
-name = strcat(handles.data.name,'netAngleHistogram');
-set(gcf, 'InvertHardCopy', 'off');
-%save file
-print (data,name, '-dtiff');
-
-
 
 function browseSavePath_Callback(hObject, eventdata, handles)
 % hObject    handle to browseSavePath (see GCBO)
@@ -1395,115 +1509,6 @@ guidata(hObject,handles)
 % --- Executes during object creation, after setting all properties.
 function saveName_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to saveName (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes when selected object is changed in saveDirSelect.
-function saveDirSelect_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in saveDirSelect 
-% eventdata  structure with the following fields (see UIBUTTONGROUP)
-%	EventName: string 'SelectionChanged' (read only)
-%	OldValue: handle of the previously selected object or empty if none was selected
-%	NewValue: handle of the currently selected object
-% handles    structure with handles and user data (see GUIDATA)
-
-%if the current directory option is selected, store that info
-if (hObject == handles.currentSave)
-    handles.data.currentSave = 1;
-else
-    handles.data.currentSave = 0;
-end
-guidata(hObject,handles)
-
-% --- Executes when selected object is changed in saveNameSelect.
-function saveNameSelect_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in saveNameSelect 
-% eventdata  structure with the following fields (see UIBUTTONGROUP)
-%	EventName: string 'SelectionChanged' (read only)
-%	OldValue: handle of the previously selected object or empty if none was selected
-%	NewValue: handle of the currently selected object
-% handles    structure with handles and user data (see GUIDATA)
-
-%if the current directory option is selected, store that info
-if (hObject == handles.currentName)
-    handles.data.currentName = 1;
-else
-    handles.data.currentName = 0;
-end
-guidata(hObject,handles)
-
-
-% --- Executes on button press in meanShow2.
-function meanShow2_Callback(hObject, eventdata, handles)
-% hObject    handle to meanShow2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-if (get(hObject,'Value') == get(hObject,'Max'))
-    plot_average(handles,0);
-else
-    %else replot the histogram (cla is inherent in plot_histogram)
-    plot_histogram(handles,0);
-    if (get(handles.quartDisplay2,'Value'))
-        plot_lines(handles,0);
-    end
-end
-if(handles.data.showCent2)
-    set(handles.Histogram2,'Visible','off');
-    set(get(handles.Histogram2,'Children'),'Visible','off');
-end
-% Hint: get(hObject,'Value') returns toggle state of meanShow2
-
-
-% --- Executes on button press in meanShow.
-function meanShow_Callback(hObject, eventdata, handles)
-% hObject    handle to meanShow (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-if (get(hObject,'Value') == get(hObject,'Max'))
-    plot_average(handles,1);
-else
-    %else replot the histogram (cla is inherent in plot_histogram)
-    plot_histogram(handles,1);
-    if (get(handles.quartDisplay,'Value'))
-        plot_lines(handles,1);
-    end
-end
-if(handles.data.showCent)
-    set(handles.Histogram,'Visible','off');
-    set(get(handles.Histogram,'Children'),'Visible','off');
-end
-% Hint: get(hObject,'Value') returns toggle state of meanShow
-
-
-
-function hiPics_Callback(hObject, eventdata, handles)
-% hObject    handle to hiPics (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-hiPics = str2double(get(hObject, 'String'));
-if isnan(hiPics)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.hiPics);
-    errordlg('Input must be a number','Error');
-    return;
-end
-
-handles.data.hiPics = hiPics;
-guidata(hObject,handles)
-% Hints: get(hObject,'String') returns contents of hiPics as text
-%        str2double(get(hObject,'String')) returns contents of hiPics as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function hiPics_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to hiPics (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 

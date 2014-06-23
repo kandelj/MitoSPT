@@ -1,4 +1,4 @@
-function [netdistances,totdistances,netangle] = mitochondria3_d (name, numimages,hz,ratio,...
+function [netdistances,totdistances,netangle] = mitochondria_2 (name, numimages,incr,hz,ratio,...
     areaThresh, minlifetime, axes1, axes2,axes3,columns,rows)
 %mitochondria2 Track mitochondrial movement in a cell.
 %   [NETDISTANCES, LOGSPEEDS] = mitochondria(NAME,NUMIMAGES,HERTZ,RATIO,... 
@@ -18,7 +18,7 @@ function [netdistances,totdistances,netangle] = mitochondria3_d (name, numimages
 %   will be plotted on. These will be provided by default in the interface
 %   code.
 %   
-inc = numimages(1):numimages(2);
+inc = numimages(1):incr:numimages(2);
 numPics = length(inc);
 %formating name of stack
 stackName = strcat(name,'%04d.tif');
@@ -261,7 +261,7 @@ netangle(isnan(totdistances))=NaN;
 netdistances(isnan(totdistances))=NaN;
 
 %converts the lifetime min from seconds to hz
-lifetimemin = minlifetime*hz;
+lifetimemin = minlifetime*hz/incr;
 
 %the array of all lifetimes for the mitochondria
 lifetime = lastframe - firstframe;
