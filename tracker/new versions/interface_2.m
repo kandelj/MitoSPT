@@ -102,59 +102,80 @@ areaThresh = [handles.data.loArea handles.data.hiArea];
 lifetime = handles.data.lifetime;
 columns = handles.data.columns;
 rows = handles.data.rows;
+%if the current directory is not selected, will set the full name of the
+%file to include the path to the directory
 if (handles.data.current)
     fullName = name;
+    file_path = strcat(pwd,filesep);
 else
-    %ensures there is at least one \ at the end of brwose path
-    if ~strcmp((handles.data.browsePath(end)),'\')
-        file_path = strcat(handles.data.browsePath,'\');
+    %ensures there is at least one filesep at the end of brwose path
+    if(~exist(handles.data.browsePath,'dir'))
+        errordlg('Stack Location folder does not exist','File Error');
+        set(handles.busyStatus, 'String', '');
+        return
+    end
+    if ~strcmp((handles.data.browsePath(end)),filesep)
+        file_path = strcat(handles.data.browsePath,filesep);
     else
         file_path = handles.data.browsePath;
     end
     fullName = strcat(file_path,name);
-    %'\' is an escape character so therefore must use '\\' for the sprintf
+    %'\' is an escape character so therefore must use '\\' for the imread
     %function in the mitochondria function to work
-    fullName = strrep(fullName, '\','\\');
+    doublesep = strcat(filesep,filesep);
+    fullName = strrep(fullName, filesep,doublesep);
 end
 
+%Ensures that a save name exists
 if(handles.data.currentName)
     saveName = name;
+    %replaces illegal save characters with underscores
+    if ~isempty(saveName)&&(any(saveName(regexp(saveName,'\W'))))
+        saveName(regexp(saveName,'\W')) = '_';
+    end
+    %removes and preceding underscores or if the name is empty, just leave
+    %it be
+    while ~isempty(saveName)&&(strcmp(saveName(1),'_'))
+        saveName(1)=[];
+    end
 else
     if(isempty(handles.data.saveName))
-        errordlg('No save name written','Error');
+        errordlg('No save name written','Save Name Error');
+        set(handles.busyStatus, 'String', '');
         return
     end
     saveName = handles.data.saveName;
 end
-%Ensures there are no illegal characters when saving
-saveName(regexp(saveName,'\W'))='_';
-while(~isempty(saveName)&&strcmp(saveName(1),'_'))
-    saveName(1)=[];
-end
 
+%Ensures that the save path exists.
 if (handles.data.currentSave)
     fullSaveName = saveName;
 else
     if(isempty(handles.data.browseSavePath))
-        errordlg('No save path selected','Error');
+        errordlg('No save path selected','Save Path Error');
         set(handles.busyStatus, 'String', '');
         return
     end
     if(~exist(handles.data.browseSavePath,'dir'))
-        errordlg('Save destination folder does not exist','Error');
+        errordlg('Save destination folder does not exist','Save Path Error');
         set(handles.busyStatus, 'String', '');
         return
     end
-    file_path = strcat(handles.data.browseSavePath,'\');
-    fullSaveName = strcat(file_path,saveName);
+    file_save_path = strcat(handles.data.browseSavePath,filesep);
+    fullSaveName = strcat(file_save_path,saveName);
 end
-%checks if the first and the last image files exist in the selected
-%directory, assumes no numbers will be skipped in the middle.
-suspect1 = strcat(fullName,sprintf('%04d.tif',numPics(1)));
-suspect2 = strcat(fullName,sprintf('%04d.tif',numPics(2)));
-if (~exist(suspect1,'file'))||(~exist(suspect2,'file'))
-    errordlg('File does not exist, Check file name, directory or number','Error');
-elseif (numPics(1)<0)
+%checks if all needed images exist
+inc = numPics(1):incr:numPics(2);
+for i = (inc)
+    suspect = strcat(fullName,sprintf('%04d.tif',i));
+    if (~exist(suspect,'file'))
+        file_path = strcat(file_path,name);
+        errordlg(strcat(strcat(file_path,sprintf('%04d.tif',i)),' does not exist '),'File Error');
+        set(handles.busyStatus, 'String', '');
+        return
+    end
+end
+if (numPics(1)<0)
     %Ensures first pic number is >=0
     errordlg('first picture number must be non negative','Input Error');
 elseif ((numPics(2)-numPics(1))/incr<1)
@@ -231,7 +252,7 @@ else
     plot_histogram(handles,0);
     set(handles.bins, 'String', handles.data.bins_temp);
     
-   %Calculates the quartiles
+    %Calculates the quartiles
     quarts = quantile(log(netDist(netDist>0)),[0 .25 .5 .75 1]);
     handles.data.min = quarts(1);
     handles.data.q1 = quarts(2);
@@ -279,19 +300,19 @@ else
     
     plot_rose(handles);
     
-
+    
     
     
     strNetDistance = strcat(saveName,'NetDistance');
     eval(sprintf('%s=netDist;',strNetDistance));
-        
+    
     strTotDistance = strcat(saveName,'TotDistance');
     eval(sprintf('%s=totDist;',strTotDistance));
     
     
     strNetAngle = strcat(saveName,'NetAngle');
     eval(sprintf('%s=netAngle;',strNetAngle));
-        
+    
     %saves the parameters used in the evaluation
     structName = strcat(saveName,'Parameters');
     eval(sprintf('%s.numPics=numPics;',structName));
@@ -300,6 +321,7 @@ else
     eval(sprintf('%s.ratio=ratio;',structName));
     eval(sprintf('%s.areaThresh=areaThresh;',structName));
     eval(sprintf('%s.lifetime=lifetime;',structName));
+    eval(sprintf('%s.stackLoc=fullfile(file_path,name);',structName));
     %Saves the variables into a .mat file
     file = strcat(fullSaveName,'Data');
     save(file,sprintf('%s',strNetDistance),sprintf('%s',strTotDistance),sprintf('%s',strNetAngle),sprintf('%s',structName));
@@ -397,6 +419,7 @@ set(handles.quartDisplay, 'Value', 0);
 set(handles.quartDisplay2, 'Value', 0);
 set(handles.meanShow, 'Value', 0);
 set(handles.meanShow2, 'Value', 0);
+set(handles.incrementMenu, 'Value',1);
 %clears Centroid graph
 axes(handles.Centroid)
 cla
@@ -998,7 +1021,7 @@ set(hObject, 'String', {'Every 1', 'Every 2nd', 'Every 3rd', 'Every 4th', 'Every
 
 % --- Executes when selected object is changed in saveDirSelect.
 function saveDirSelect_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in saveDirSelect 
+% hObject    handle to the selected object in saveDirSelect
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
@@ -1015,7 +1038,7 @@ guidata(hObject,handles)
 
 % --- Executes when selected object is changed in saveNameSelect.
 function saveNameSelect_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in saveNameSelect 
+% hObject    handle to the selected object in saveNameSelect
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
