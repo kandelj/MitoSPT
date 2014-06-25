@@ -171,14 +171,35 @@ else
 end
 %checks if all needed images exist
 inc = numPics(1):incr:numPics(2);
+errorString = '';
+missingFiles = false;
+file_path = strcat(file_path,name);
+doublesep = strcat(filesep,filesep);
+file_path = strrep(file_path, filesep,doublesep);
 for i = (inc)
     suspect = strcat(fullName,sprintf('%04d.tif',i));
     if (~exist(suspect,'file'))
-        file_path = strcat(file_path,name);
-        errordlg(strcat(strcat(file_path,sprintf('%04d.tif',i)),' does not exist '),'File Error');
-        set(handles.busyStatus, 'String', '');
-        return
+        
+        errorString = strcat(errorString,file_path,sprintf('%04d.tif',i),'\n ');
+        missingFiles = true;
     end
+end
+if missingFiles
+    fig = figure('Units','Normalized','Position',[.3 .3 .4 .4]);
+    defaultBackground = get(fig,'Color');
+    
+    h = uicontrol('Style','edit','Units','Normalized','Position',[.10 .10 .8 .8],...
+        'min',0,'max',2,'enable','inactive');
+    str = sprintf(errorString);
+    set(h,'String',str) % display the string
+    
+    uicontrol('Style','text',...
+        'Units','Normalized',...
+        'Position',[.3 .9 .4 .05],...
+        'BackgroundColor',defaultBackground,...
+        'String','These Files Do Not Exist')
+    set(handles.busyStatus, 'String', '');
+    return
 end
 if (numPics(2)<numPics(1))
     %Ensures the numbers go up
@@ -678,6 +699,29 @@ else
     end
 end
 
+% --- Executes on selection change in incrementMenu.
+function incrementMenu_Callback(hObject, eventdata, handles)
+% hObject    handle to incrementMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns incrementMenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from incrementMenu
+
+
+% --- Executes during object creation, after setting all properties.
+function incrementMenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to incrementMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+%Sets the menu options to 1-5, value will also be 1-5
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+set(hObject, 'String', {'Every 1', 'Every 2nd', 'Every 3rd', 'Every 4th', 'Every 5th'});
+
+
 %% Textboxes
 function name_Callback(hObject, eventdata, handles)
 % hObject    handle to name (see GCBO)
@@ -751,30 +795,6 @@ function hiPics_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-% --- Executes on selection change in incrementMenu.
-function incrementMenu_Callback(hObject, eventdata, handles)
-% hObject    handle to incrementMenu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns incrementMenu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from incrementMenu
-
-
-% --- Executes during object creation, after setting all properties.
-function incrementMenu_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to incrementMenu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-%Sets the menu options to 1-5, value will also be 1-5
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-set(hObject, 'String', {'Every 1', 'Every 2nd', 'Every 3rd', 'Every 4th', 'Every 5th'});
-
-
 
 function period_Callback(hObject, eventdata, handles)
 % hObject    handle to period (see GCBO)
