@@ -135,9 +135,9 @@ if(handles.data.currentName)
     end
     %removes and preceding underscores or if the name is empty, just leave
     %it be
-    while ~isempty(saveName)&&(strcmp(saveName(1),'_'))
-        saveName(1)=[];
-    end
+    while ~isempty(saveName)&&((strcmp(saveName(1),'_'))||(any(regexp(saveName(1),'\d'))))
+       saveName(1)=[];
+   end
 else
     if(isempty(handles.data.saveName))
         errordlg('No save name written','Save Name Error');
