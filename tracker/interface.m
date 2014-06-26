@@ -40,7 +40,7 @@ function varargout = interface(varargin)
 
 % Edit the above text to modify the response to help interface
 
-% Last Modified by GUIDE v2.5 18-Jun-2014 13:33:23
+% Last Modified by GUIDE v2.5 26-Jun-2014 13:06:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -144,12 +144,20 @@ if(handles.data.currentName)
        saveName(1)=[];
    end
 else
-    if(isempty(handles.data.saveName))
-        errordlg('No save name written','Save Name Error');
+    saveName = handles.data.saveName;
+    if ~isempty(saveName)&&(any(saveName(regexp(saveName,'\W')))||any(saveName(regexp(saveName(1),'[^a-z|^A-Z]'))))
+        errordlg('Save Name is not valid (Must be alphanumeric or ''_'' and must start with a letter)','Save Name Error' )
         set(handles.busyStatus, 'String', '');
         return
     end
-    saveName = handles.data.saveName;
+    if(isempty(saveName))
+        errordlg('No save name written','Save Name Error');
+        set(handles.saveNameSelect, 'SelectedObject', handles.currentName);
+        handles.data.currentName=1;
+        guidata(hObject,handles)
+        set(handles.busyStatus, 'String', '');
+        return
+    end
 end
 
 %Ensures that the save path exists.
@@ -158,11 +166,17 @@ if (handles.data.currentSave)
 else
     if(isempty(handles.data.browseSavePath))
         errordlg('No save path selected','Save Path Error');
+        set(handles.saveDirSelect, 'SelectedObject', handles.currentSave);
+        handles.data.currentSave=1;
+        guidata(hObject,handles)
         set(handles.busyStatus, 'String', '');
         return
     end
     if(~exist(handles.data.browseSavePath,'dir'))
         errordlg('Save destination folder does not exist','Save Path Error');
+        set(handles.saveDirSelect, 'SelectedObject', handles.currentSave);
+        handles.data.currentSave=1;
+        guidata(hObject,handles)
         set(handles.busyStatus, 'String', '');
         return
     end
@@ -170,6 +184,11 @@ else
     fullSaveName = strcat(file_path,saveName);
 end
 %checks if all needed images exist
+if any(~isfinite(numPics))
+    errordlg('Picture numbers must be numeric','Input Error');
+    set(handles.busyStatus, 'String', '');
+    return
+end
 inc = numPics(1):incr:numPics(2);
 errorString = '';
 missingFiles = false;
@@ -213,9 +232,15 @@ elseif ((numPics(2)-numPics(1))/incr<1)
 elseif (freq<=0)
     %ensures frequency is positive
     errordlg('Period value must be positive','Input Error');
+elseif ~isfinite(freq)
+    errordlg('Period must be numeric', 'Input Error');
 elseif (ratio<=0)
     %ensures the ratio of micron to pixel is positive
     errordlg('Ratio must be positive','Input Error');
+elseif ~isfinite(ratio)
+    errordlg('Ratio must be numeric', 'Input Error');
+elseif (any(~isfinite(areaThresh)))
+    errordlg('Areas must be numeric','Input Error');
 elseif (areaThresh(1)>=areaThresh(2))
     %ensures the lower area threshold is strictly lower than the upper area
     %threshold
@@ -226,6 +251,8 @@ elseif (areaThresh(1)<=0)
 elseif (lifetime < 0)
     %ensures that the lifetime is positive
     errordlg('Minimum lifetime must be non negative','Input Error');
+elseif ~isfinite(lifetime)
+    errordlg('Lifetime must be a number','Input Error');
 elseif (floor((numPics(2)-numPics(1))/incr) < lifetime*freq/incr)
     %ensures that enough frames will be evaulated to exceed the min
     %lifetime
@@ -637,10 +664,13 @@ function updateCentroid_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
+if(~isfinite(handles.data.loLimit)||~isfinite(handles.data.hiLimit))
+   errordlg('Limits must be numeric','Input Error');
+   return
+end
 if (handles.data.loLimit >= handles.data.hiLimit)
     %ensures the lower limit is strictly lower than the upper limit
-    errordlg('lower limit must be strictly lower than upper limit','Error');
+    errordlg('Lower limit must be strictly lower than Upper limit','Error');
     return
 end
 %changes the colorbar limits of the centroid plot
@@ -651,7 +681,7 @@ function updateHistogram_Callback(hObject, eventdata, handles)
 % hObject    handle to updateHistogram (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-if (handles.data.bins < 1)
+if ~isfinite(handles.data.bins)||(handles.data.bins < 1)
     %ensures that there is a positive number of bins
     errordlg('Must be a positive number of bins','Error');
     return
@@ -746,13 +776,6 @@ function loPics_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 loPics = str2double(get(hObject, 'String'));
-if ~isfinite(loPics)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.loPics);
-    errordlg('Input must be a number','Error');
-    return;
-end
-
 handles.data.loPics = loPics;
 guidata(hObject,handles)
 
@@ -771,13 +794,6 @@ function hiPics_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 hiPics = str2double(get(hObject, 'String'));
-if ~isfinite(hiPics)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.hiPics);
-    errordlg('Input must be a number','Error');
-    return;
-end
-
 handles.data.hiPics = hiPics;
 guidata(hObject,handles)
 % Hints: get(hObject,'String') returns contents of hiPics as text
@@ -801,13 +817,6 @@ function period_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 period = str2double(get(hObject, 'String'));
-if ~isfinite(period)
-    %ensures it is a number
-    set(hObject, 'String', 1/handles.data.freq);
-    errordlg('Input must be a number','Error');
-    return;
-end
-
 handles.data.freq = 1/period;
 guidata(hObject,handles)
 
@@ -826,13 +835,6 @@ function ratio_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 ratio = str2double(get(hObject, 'String'));
-if ~isfinite(ratio)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.ratio);
-    errordlg('Input must be a number','Error');
-    return;
-end
-
 handles.data.ratio = ratio;
 guidata(hObject,handles)
 
@@ -851,13 +853,6 @@ function loLimit_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 loLimit = str2double(get(hObject, 'String'));
-if ~isfinite(loLimit)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.loLimit);
-    errordlg('Input must be a number','Error');
-    return;
-end
-
 handles.data.loLimit = loLimit;
 guidata(hObject,handles)
 
@@ -876,13 +871,6 @@ function hiLimit_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 hiLimit = str2double(get(hObject, 'String'));
-if ~isfinite(hiLimit)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.hiLimit);
-    errordlg('Input must be a number','Error');
-    return;
-end
-
 handles.data.hiLimit = hiLimit;
 guidata(hObject,handles)
 
@@ -901,6 +889,8 @@ function browsePath_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 browsePath = (get(hObject, 'String'));
+set(handles.dirSelect, 'SelectedObject', handles.otherDir);
+handles.data.current = 0;
 handles.data.browsePath = browsePath;
 guidata(hObject,handles)
 
@@ -919,12 +909,6 @@ function bins_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 bins = str2double(get(hObject, 'String'));
-if ~isfinite(bins)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.bins);
-    errordlg('Input must be a number','Error');
-    return
-end
 handles.data.bins = bins;
 guidata(hObject,handles)
 
@@ -943,12 +927,7 @@ function loArea_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 loArea = str2double(get(hObject, 'String'));
-if ~isfinite(loArea)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.loArea);
-    errordlg('Input must be a number','Error');
-    return
-end
+
 
 handles.data.loArea = loArea;
 guidata(hObject,handles)
@@ -968,12 +947,7 @@ function hiArea_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 hiArea = str2double(get(hObject, 'String'));
-if ~isfinite(hiArea)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.hiArea);
-    errordlg('Input must be a number','Error');
-    return
-end
+
 
 handles.data.hiArea = hiArea;
 guidata(hObject,handles)
@@ -993,13 +967,6 @@ function lifetime_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 lifetime = str2double(get(hObject, 'String'));
-if ~isfinite(lifetime)
-    %ensures it is a number
-    set(hObject, 'String', handles.data.lifetime);
-    errordlg('Input must be a number','Error');
-    return
-end
-
 handles.data.lifetime = lifetime;
 guidata(hObject,handles)
 
@@ -1019,6 +986,7 @@ function browseSavePath_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 browseSavePath = (get(hObject, 'String'));
 handles.data.browseSavePath = browseSavePath;
+set(handles.saveDirSelect, 'SelectedObject', handles.otherSave);
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
@@ -1038,12 +1006,8 @@ function saveName_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 saveName = (get(hObject, 'String'));
-%Ensures there are no illegal characters when saving
-if ~isempty(saveName)&&(any(saveName(regexp(saveName,'\W')))||any(saveName(regexp(saveName(1),'[^a-z|^A-Z]'))))
-   set(hObject, 'String', handles.data.saveName);
-   errordlg('Save Name is not valid (Must be alphanumeric or ''_'' and must start with a letter)','Save Name Error' )
-   return
-end
+set(handles.saveNameSelect, 'SelectedObject', handles.otherName);
+handles.data.currentName = 0;
 handles.data.saveName = saveName;
 guidata(hObject,handles)
 
@@ -1057,4 +1021,363 @@ function saveName_CreateFcn(hObject, eventdata, handles)
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on key press with focus on name and none of its controls.
+function name_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to name (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    handles.data.name = get(hObject,'String');
+    guidata(interface,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on browseSavePath and none of its controls.
+function browseSavePath_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to browseSavePath (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    browseSavePath = (get(hObject, 'String'));
+    handles.data.currentSave = 0;
+    handles.data.browseSavePath = browseSavePath;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on saveName and none of its controls.
+function saveName_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to saveName (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    saveName = (get(hObject, 'String'));
+    handles.data.currentName = 0;
+    handles.data.saveName = saveName;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on lifetime and none of its controls.
+function lifetime_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to lifetime (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    lifetime = str2double((get(hObject, 'String')));
+    handles.data.lifetime = lifetime;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on loArea and none of its controls.
+function loArea_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to loArea (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    loArea = str2double((get(hObject, 'String')));
+    handles.data.loArea = loArea;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on hiArea and none of its controls.
+function hiArea_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to hiArea (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    hiArea = str2double((get(hObject, 'String')));
+    handles.data.hiArea = hiArea;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on ratio and none of its controls.
+function ratio_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to ratio (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    ratio = str2double((get(hObject, 'String')));
+    handles.data.ratio = ratio;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on period and none of its controls.
+function period_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to period (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    period = str2double((get(hObject, 'String')));
+    handles.data.freq = 1/period;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on incrementMenu and none of its controls.
+function incrementMenu_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to incrementMenu (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on loPics and none of its controls.
+function loPics_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to loPics (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    loPics = str2double((get(hObject, 'String')));
+    handles.data.loPics = loPics;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on hiPics and none of its controls.
+function hiPics_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to hiPics (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    hiPics = str2double((get(hObject, 'String')));
+    handles.data.hiPics = hiPics;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on browsePath and none of its controls.
+function browsePath_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to browsePath (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    browsePath = (get(hObject, 'String'));
+    handles.data.current = 0;
+    handles.data.browsePath = browsePath;
+    guidata(hObject,handles)
+    calculate_Callback(handles.calculate,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on browse and none of its controls.
+function browse_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to browse (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    browse_Callback(hObject,eventdata,handles)
+end
+
+
+% --- Executes on key press with focus on browseSave and none of its controls.
+function browseSave_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to browseSave (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    browseSave_Callback(hObject,eventdata,handles)
+end
+
+
+% --- Executes on key press with focus on calculate and none of its controls.
+function calculate_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to calculate (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    calculate_Callback(hObject,eventdata,handles)
+end
+
+
+% --- Executes on key press with focus on clear and none of its controls.
+function clear_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to clear (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    clear_Callback(hObject,eventdata,handles)
+end
+
+
+% --- Executes on key press with focus on saveCent and none of its controls.
+function saveCent_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to saveCent (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    saveCent_Callback(hObject,eventdata,handles)
+end
+
+
+% --- Executes on key press with focus on saveHist and none of its controls.
+function saveHist_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to saveHist (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    saveHist_Callback(hObject,eventdata,handles)
+end
+
+
+% --- Executes on key press with focus on loLimit and none of its controls.
+function loLimit_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to loLimit (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    loLimit = str2double(get(hObject, 'String'));
+    handles.data.loLimit = loLimit;
+    guidata(hObject,handles)
+    updateCentroid_Callback(handles.Centroid,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on hiLimit and none of its controls.
+function hiLimit_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to hiLimit (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    hiLimit = str2double(get(hObject, 'String'));
+    handles.data.hiLimit = hiLimit;
+    guidata(hObject,handles)
+    updateCentroid_Callback(handles.updateCentroid,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on updateCentroid and none of its controls.
+function updateCentroid_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to updateCentroid (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    updateCentroid_Callback(hObject,eventdata,handles)
+end
+
+
+% --- Executes on key press with focus on bins and none of its controls.
+function bins_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to bins (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    figure(interface)
+    bins = str2double(get(hObject, 'String'));
+    handles.data.bins = bins;
+    guidata(hObject,handles)
+    updateHistogram_Callback(handles.updateHistogram,eventdata,handles);
+end
+
+
+% --- Executes on key press with focus on updateHistogram and none of its controls.
+function updateHistogram_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to updateHistogram (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if (strcmp(eventdata.Key,'return'))
+    updateHistogram_Callback(hObject,eventdata,handles)
 end
