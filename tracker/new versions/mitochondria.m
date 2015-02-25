@@ -1,8 +1,8 @@
-function [netdistances,totdistances,netangle] = mitochondria_2 (name, numimages,incr,hz,ratio,...
-    areaThresh, minlifetime, axes1, axes2,axes3,columns,rows)
-%mitochondria2 Track mitochondrial movement in a cell.
-%   [NETDISTANCES, LOGSPEEDS] = mitochondria(NAME,NUMIMAGES,HERTZ,RATIO,... 
-%   AREATHRESH, LFETIMEMIN, AXES1) with AREATHRESH = [AREAMIN AREAMAX]
+function [netdistances] = mitochondria (name, numimages,hz,ratio,...
+    areaThresh, minlifetime, centroidAxes)
+%mitochondria Track mitochondrial movement in a cell.
+%   [NETDISTANCES] = mitochondria(NAME,NUMIMAGES,HERTZ,RATIO,... 
+%   AREATHRESH, LFETIMEMIN, CENTROIDAXES) with AREATHRESH = [AREAMIN AREAMAX]
 %   tracks the movement of mitochondria in a cell by examining a stack of
 %   images. The images in the stack must be named with NAME and then a 4 digit
 %   number and then '.tif'. For example: NAME0000.tif
@@ -13,28 +13,27 @@ function [netdistances,totdistances,netangle] = mitochondria_2 (name, numimages,
 %   2 element array that contains AREAMIN and AREAMAX. These areas are the
 %   boundaries of the size of the objects the function will be considering.
 %   MINLIFETIME is the minimum lifetime required for objects to be
-%   considered in calculations. AXES1 is the axes that the centroid plot
-%   will be plotted on. AXES2 is the axes that the total distance centroid plot 
-%   will be plotted on. These will be provided by default in the interface
+%   considered in calculations. CENTROIDAXES is the axes that the centroid plot
+%   will be plotted on. This will be provided by default in the interface
 %   code.
-%   
-inc = numimages(1):incr:numimages(2);
-numPics = length(inc);
+%   NETDISTANCES will be an array of the net distances traveled by the
+%   mitochondrial objects that were considered by this function. It will be
+%   a 1xN array where N is the amount of objects that existed longer than
+%   the minimum life time.
+%   Authors: Judith Kandel, Philip Chou
+
 %formating name of stack
 stackName = strcat(name,'%04d.tif');
 %Adjusts the area from square microns to pixels
 areaThresh = areaThresh./(ratio^2);
 %Initalizes arrays for future use
-Pics = cell(1,numPics);
-maxobjects = zeros(1,numPics);
-allcentroidx = zeros(1,numPics);
-allcentroidy = zeros(1,numPics);
-%the code for the waitbar, and making it blue
-h = waitbar(0,sprintf('0/%d',numPics),'Name','Processing Image Stack...');
-set(findobj(h,'type','patch'), 'edgecolor',[0 0 1],'facecolor',[0 0 1])
-for i = 1:numPics;
+Pics = cell(1,numimages);
+maxobjects = zeros(1,numimages);
+allcentroidx = zeros(1,numimages);
+allcentroidy = zeros(1,numimages);
+for i = 1:numimages;
     %stores the name of each picture into the cell array
-    Pics{i} = sprintf(stackName,inc(i));
+    Pics{i} = sprintf(stackName,i-1);
     %loads the image
     Image = imread(Pics{i});
     %finds the connected components of the image, 8-connected neighborhood
@@ -186,15 +185,7 @@ for i = 1:numPics;
     %saves centroid coordinates for each object
     allcentroidx(1:length(centroidx),i) = centroidx(:);
     allcentroidy(1:length(centroidy),i) = centroidy(:);
-    
-    try
-        waitbar(i/numPics,h,sprintf('%d/%d',i,numPics))
-    catch err
-        h = waitbar(i/numPics,sprintf('%d/%d',i,numPics),'Name','Processing Image Stack...');
-        set(findobj(h,'type','patch'), 'edgecolor',[0 0 1],'facecolor',[0 0 1])
-    end
 end
-close(h)
 
 %overwrites any default (0,0) coordinates to NaN--this applies to object A where
 %objects A and B have fused to become object B, or an object has disappeared.
@@ -223,12 +214,12 @@ for m = 1:numLabels
     allobjects{m} = object;
     
     %Initializes the distance array
-    distance = zeros(1,numPics);
+    distance = zeros(1,numimages);
     %the distance for frame 1 is NaN since the object is not yet moving
     distance(1) = NaN;
     %for each frame beyond frame one, the distance traveled between the
     %last 2 frames is calculated
-    ll = 2:numPics;
+    ll = 2:numimages;
     distance(ll) = sqrt((allcentroidx(m,ll) - allcentroidx(m,ll-1)).^2 + ...
         (allcentroidy(m,ll) - allcentroidy(m,ll-1)).^2);
     %all of the distances are then stored into an array, with each column
@@ -247,150 +238,87 @@ initialframe = (firstframe-1)*numLabels + mm;
 %frame the object is present to the last frame
 netdistance= sqrt((allcentroidx(finalframe) - allcentroidx(initialframe)).^2 + ...
     (allcentroidy(finalframe) - allcentroidy(initialframe)).^2);
-%net distance in microns
+%those objects that have not traveled anywhere, meaning they appeared
+%and then disappeared, have a NaN net distance
+netdistance(netdistance == 0) = NaN;
+%and net distance in microns
 netdistances = netdistance * ratio;
-%The total distance traveled by the mitochondria
-totdistances = nansum(alldistances) * ratio;
-totdistances(totdistances == 0) = NaN;
 
-netangle = atan2d((allcentroidy(initialframe) - allcentroidy(finalframe)), ...
-    (allcentroidx(initialframe) - allcentroidx(finalframe)));
-%gets the absolute angle of the net path
-netangle(isnan(totdistances))=NaN;
-netdistances(isnan(totdistances))=NaN;
+%plots the centroid evolvement
+plot_centroid
 
-%converts the lifetime min from seconds to hz
-lifetimemin = minlifetime*hz/incr;
-
-%the array of all lifetimes for the mitochondria
-lifetime = lastframe - firstframe;
-
-%height of the axes
-axesHeight = 1040;
-axesWidth = 1392;
-
-%initializing arrays
-lastcentroidx = zeros(1,maxobjects(end));
-lastcentroidy = zeros(1,maxobjects(end));
-for g = 1:maxobjects(end)
-    %last centroids for all objects
-    lastcentroidx(g) = allcentroidx(g,lastframe(g));
-    lastcentroidy(g) = allcentroidy(g,lastframe(g));
-end
-x_min = min(lastcentroidx(lifetime >= lifetimemin));
-x_max = max(lastcentroidx(lifetime >= lifetimemin));
-y_min = min(lastcentroidy(lifetime >= lifetimemin));
-y_max = max(lastcentroidy(lifetime >= lifetimemin));
-
-x_diff = x_max-x_min;
-y_diff = y_max - y_min;
-
-ratio_x = axesWidth/x_diff;
-ratio_y = axesHeight/y_diff;
-scaling = min(ratio_x,ratio_y);
-lastcentroidx = (lastcentroidx- x_min) * scaling;
-lastcentroidy = (lastcentroidy- y_min) * scaling;
-if (ratio_x>ratio_y)
-    centering = (axesWidth-x_diff*scaling)/2;
-    lastcentroidx = lastcentroidx + centering;
-else
-    centering = (axesHeight-y_diff*scaling)/2;
-    lastcentroidy = lastcentroidy + centering;
-end
-%plots the net distance centroid evolvement
-plot_centroid(1)
-plot_centroid(0)
-plot_quiver
+%Discards the netdistances that had a lifetime shorter than the minimum
+%lifetime. Lifetime and lifetime min arrays are calculated in plot_centroid
 netdistances = netdistances(lifetime>=lifetimemin);
-totdistances = totdistances(lifetime>=lifetimemin);
-netangle = netangle(lifetime>=lifetimemin);
-    function plot_centroid(isNet)
+
+    function plot_centroid
         %plot all centroids with a cool-warm color code based on their net distance
         %traveled
         
-        %sets the axes given as an argument as the current axes
-        %also sets distance array to desired one
-        if (isNet)
-            distances = netdistances;
-            axes(axes1);
-        else
-           
-            distances = totdistances;
-            axes(axes2);
-        end
+        %Dimensions of the axes
+        axesHeight = 1040;
+        axesWidth = 1392;
         
+        %sets the axes given as an argument as the current axes
+        axes(centroidAxes)
         hold on
+        
+        %converts the lifetime min from seconds to hz
+        lifetimemin = minlifetime*hz;
+        
+        %the array of all lifetimes for the mitochondria
+        lifetime = lastframe - firstframe;
+        
         %the limits of the color bar
         limits = [-6.5 2.2];
+        %initializing arrays
+        lastcentroidx = zeros(1,maxobjects(end));
+        lastcentroidy = zeros(1,maxobjects(end));
+        for g = 1:maxobjects(end)
+            %last centroids for all objects
+            lastcentroidx(g) = allcentroidx(g,lastframe(g));
+            lastcentroidy(g) = allcentroidy(g,lastframe(g));
+        end
+        %determines the bounds of the centroids themselves
+        x_min = min(lastcentroidx(lifetime >= lifetimemin));
+        x_max = max(lastcentroidx(lifetime >= lifetimemin));
+        y_min = min(lastcentroidy(lifetime >= lifetimemin));
+        y_max = max(lastcentroidy(lifetime >= lifetimemin));
+        %Finds their ranges
+        x_diff = x_max-x_min;
+        y_diff = y_max - y_min;
+        %Finds the ratio between the range of the centroids and the axes
+        %itself
+        ratio_x = axesWidth/x_diff;
+        ratio_y = axesHeight/y_diff;
+        %Use the smaller one to keep aspect ratio
+        scaling = min(ratio_x,ratio_y);
+        %Scale the centroid positions
+        lastcentroidx = (lastcentroidx- x_min) * scaling;
+        lastcentroidy = (lastcentroidy- y_min) * scaling;
+        %Center the cell
+        if (ratio_x>ratio_y)
+            centering = (axesWidth-x_diff*scaling)/2;
+            lastcentroidx = lastcentroidx + centering;
+        else
+            centering = (axesHeight-y_diff*scaling)/2;
+            lastcentroidy = lastcentroidy + centering;
+        end
         %clears the tick marks
         set(gca,'Color',[0 0 0],'XTickLabel',[],'YTickLabel',[]);
-       
+        
         %plots the centroid of all objects, color coding their logs according to
         %how far they traveled
         scatter(lastcentroidx(lifetime >= lifetimemin),...
-            axesHeight- (lastcentroidy(lifetime >= lifetimemin)),300,...
-            log(distances(lifetime >= lifetimemin)),'.')
+            axesHeight- (lastcentroidy(lifetime >= lifetimemin)),100,...
+            log(netdistances(lifetime >= lifetimemin)),'.')
         caxis(limits)
+        
         %misc axes dimensions
         axis([0 axesWidth 0 axesHeight])
         daspect([1,1,1])
         colorbar('location','southoutside')
         hold off
     end
-    function plot_quiver
-        %plot all centroids with a cool-warm color code based on their net distance
-        %traveled
-        axes(axes3)
-        
-        hold on
-        xInc = axesWidth/columns;
-        yInc = axesHeight/rows;
-        xDim = xInc/2:xInc:(2*columns-1)*xInc/2;
-        yDim = yInc/2:yInc:(2*rows-1)*yInc/2;
-        [X, Y] = meshgrid(xDim,yDim);
-        finalcentroidy = axesHeight-lastcentroidy;
-        column = cell(rows,columns);
-        row = cell(rows,columns);
-        u = zeros(rows,columns);
-        v = zeros(rows,columns);
-        for iii = 1:columns
-            column{iii} = (lastcentroidx>((iii-1)*xInc)&lastcentroidx<(iii*xInc)&lifetime >= lifetimemin);
-            
-        end
-        for iv = 1:rows
-           row{iv} = (finalcentroidy>((iv-1)*yInc)&finalcentroidy<(iv*yInc)&lifetime >= lifetimemin); 
-        end
-        for r = 1:rows
-            for c = 1:columns
-                angles = netangle(row{r}&column{c});
-                traveled = netdistances(row{r}&column{c});
-                u(r,c) = nansum(traveled.*cosd(angles));
-                v(r,c) = nansum(traveled.*sind(angles));
-            end
-        end
-        
 
-        
-        %clears the tick marks
-        set(gca,'XTickLabel',[],'YTickLabel',[]);
-        
-        %plots the centroid of all objects, color coding their logs according to
-        %how far they traveled
-        scatter(lastcentroidx(lifetime >= lifetimemin),...
-            axesHeight- (lastcentroidy(lifetime >= lifetimemin)),100,'b.')
-        quiver(X,Y,u,v,'r','LineWidth',1.2);
-        
-        xL=get(gca,'XLim');
-        yL=get(gca,'YLim');
-        for l = 1:columns
-            line([xInc*l xInc*l], yL, 'Color', 'k','LineWidth',.5);
-        end
-        for lll = 1:rows
-            line(xL, [yInc*lll yInc*lll], 'Color', 'k','LineWidth',.5);
-        end
-        %misc axes dimensions
-        axis([0 axesWidth 0 axesHeight])
-        daspect([1,1,1])
-        hold off
-    end
 end
