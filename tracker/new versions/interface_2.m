@@ -545,6 +545,7 @@ title('Net Angle Histogram');
 
 guidata(handles.figure1, handles);
 
+
 function plot_lines(handles,isNet)
 if(isNet)
     graph = handles.Histogram;
@@ -621,6 +622,7 @@ if(show)
     set(get(graph,'Children'),'Visible','off');
 end
 
+
 function plot_rose(handles)
 %plots to histogram
 axes(handles.Rose);
@@ -630,6 +632,10 @@ rose(degtorad(handles.data.netAngle),30);
 name = handles.data.name;
 histogramTitle = sprintf('%s\n %s',name,' net angle histogram');
 title(histogramTitle);
+
+
+function rad = degtorad(deg)
+rad = pi/180*deg;
 
 
 %% Buttons/Selections/Checkboxes
